@@ -1,4 +1,4 @@
-############################################################################################################################
+###
 # Name: Cindy Zeng
 # Project: CCAS in China (Paper)
 # Table: 
@@ -13,7 +13,9 @@
 #       PMflow: The Number of New Primary and Middle School CCAS over Time
 #       PMfrac: Fraction of City-Level CCAS (Primary and Middle School) by Year
 #       Hmechpie: The Distribution of Mechanisms among High School CCAS
-############################################################################################################################
+#       --- Not in paper ---
+#       Interactive Map: Generate a user-interactive graph showing the age of each city's high school CCAS in 2020
+###
 
 library(openxlsx)
 library(latticeExtra)
@@ -205,7 +207,7 @@ ggsave("Hflow.png", plot = Hflow, width = 10, height = 7, dpi = 300, bg = "white
 
 #### Hfrac: percentage of existing CCAS by year ####
 
-# detach("package:plyr", unload=TRUE) 
+detach("package:plyr", unload=TRUE) 
 
 # Calculate the counts and percentages
 CCAStot <- sum(Hswy0$swy >= 1949 & Hswy0$swy <= 2023)
@@ -450,3 +452,73 @@ pie_chart <- ggplot(label_df, aes(x = "", y = mech_c, fill = mech_t)) +
 print(pie_chart)
 ggsave("Hmechpie.png", plot = pie_chart, width = 10, height = 7, dpi = 300, bg = "white")
 
+#### Interactive Map: Generate a user-interactive graph showing the age of each city's high school CCAS in 2020  ####
+
+# https://cran.r-project.org/web/packages/leafletCN/leafletCN.pdf
+# https://rstudio.github.io/leaflet/showhide.html
+# https://r-graph-gallery.com/325-background-map-from-geojson-format-in-r.html
+
+library(htmltools)
+library(magrittr)
+library(sp)
+library(jsonlite)
+library(leaflet)
+library(rgeos)
+library(leafletCN)
+library(shiny)
+library(htmlwidgets)
+
+demomap("city")
+
+dat = data.frame(name = regionNames("china"),
+                 value = runif(34))
+geojsonMap(dat,"china")
+dat$value2 = cut(dat$value, c(0, 0.25, 0.5, 1))
+geojsonMap(dat,"china",
+           namevar = ~name,
+           valuevar = ~value2,
+           palette="Reds",
+           colorMethod="factor")
+geojsonMap(dat,"china",
+           namevar = ~name,
+           valuevar = ~value2,
+           palette = topo.colors(3),
+           colorMethod="factor")
+
+if(require(leaflet)){
+  dat = data.frame(regionNames("china"),
+                   runif(34))
+  map = leafletGeo("china", dat)
+  pal <- colorNumeric(
+    palette = "Blues",
+    domain = map$value)
+  leaflet(map) %>% addTiles() %>%
+    addPolygons(stroke = TRUE,
+                smoothFactor = 1,
+                fillOpacity = 0.7,
+                weight = 1,
+                color = ~pal(value),
+                popup = ~htmltools::htmlEscape(popup)
+    ) %>%
+    addLegend("bottomright", pal = pal, values = ~value,
+              title = "legendTitle",
+              labFormat = leaflet::labelFormat(prefix = ""),
+              opacity = 1)
+}
+
+Hswy3 <- Hswy2
+Hswy3$CCASage <- pmax(0, Hswy3$year - Hswy3$swy)
+Hswy_test <- Hswy3[Hswy3$year == 2020,]
+Hswy_test$city_c <- gsub("市", "", Hswy_test$city_c)
+Hswy_test$popup_content <- paste(Hswy_test$city_c, ": ", Hswy_test$CCASage, "years old in", Hswy_test$year)
+
+print(class(Hswy_test)) # [1] "tbl_df"     "tbl"        "data.frame"  1st time
+Hswy_test <- as.data.frame(Hswy_test) # [1] "data.frame"
+
+Agein2020 <- geojsonMap(Hswy_test, "city", namevar = ~city_c, valuevar = ~CCASage,
+                        palette = "YlOrRd", colorMethod = "numeric",
+                        na.color = "#808080", popup = Hswy_test$popup_content, 
+                        stroke = TRUE, smoothFactor = 1, weight = 1, fillOpacity = 0.7,
+                        legendTitle = paste("CCAS Age in", Hswy_test[1,"year"]))
+Agein2020
+saveWidget(Agein2020, file = "Agein2020.html")
