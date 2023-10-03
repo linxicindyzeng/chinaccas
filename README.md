@@ -1,6 +1,8 @@
 # China CCAS
 
-This repository contains the code for the project "centralized student choice and assignment systems in China."
+This repository contains the complete code for the project centralized student choice and assignment systems in China.
+
+Find information on worldwide CCAS [here](https://www.ccas-project.org/).
 
 ## ChinaCCAS.R
 ### Table: 
@@ -16,7 +18,7 @@ This repository contains the code for the project "centralized student choice an
 - PMfrac: Fraction of City-Level CCAS (Primary and Middle School) by Year
 - Hmechpie: The Distribution of Mechanisms among High School CCAS
 
---- Not in paper ---
+--- Not in [paper](https://linxicindyzeng.com/projects/CCAS/) ---
 
 - Interactive Map: Generate a user-interactive graph showing the age of each city's high school CCAS in 2020
 
